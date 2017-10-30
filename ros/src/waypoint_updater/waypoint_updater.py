@@ -25,8 +25,14 @@ LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this n
 
 
 class WaypointUpdater(object):
+
+    base_waypoints = []
+    last_waypoint = 0
+    base_waypoints_received = False
+    final_wp_seq = 0
+
     def __init__(self):
-        rospy.init_node('waypoint_updater')
+        rospy.init_node('waypoint_updater', log_level=rospy.DEBUG)
 
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
@@ -42,11 +48,35 @@ class WaypointUpdater(object):
 
     def pose_cb(self, msg):
         # TODO: Implement
-        pass
+        if (self.base_waypoints_received == False):
+            return
+
+        current_wp = 0
+        dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
+        for i in range(len(self.base_waypoints)):
+            dist = dl(msg.pose.position, self.base_waypoints[i].pose.pose.position)
+            if (i == 0):
+                min_dist = dist
+            else:
+                if (dist < min_dist):
+                    current_wp = i
+
+        final_waypoints_ = Lane()
+        final_waypoints_.header.seq = self.final_wp_seq
+        self.final_wp_seq = self.final_wp_seq + 1
+
+        for i in range(LOOKAHEAD_WPS):
+            final_waypoints_.waypoints.append(self.base_waypoints[i + current_wp])
+
+        self.final_waypoints_pub.publish(final_waypoints_)
 
     def waypoints_cb(self, waypoints):
         # TODO: Implement
-        pass
+        now = rospy.get_rostime()
+        rospy.logdebug("current time %i %i", now.secs, now.nsecs)
+        rospy.logdebug("waypoints_cb seq={}, stamp={}, frame_id={}, num of waypoints={}".format(waypoints.header.seq, waypoints.header.stamp, waypoints.header.frame_id, len(waypoints.waypoints)))
+        self.base_waypoints = waypoints.waypoints
+        self.base_waypoints_received = True
 
     def traffic_cb(self, msg):
         # TODO: Callback for /traffic_waypoint message. Implement
