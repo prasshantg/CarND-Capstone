@@ -169,7 +169,7 @@ class TLDetector(object):
 
         waypoints = wp.waypoints
         for i, w in enumerate(waypoints):
-            dist = self.euclidean_distance_light(lp, w.pose.pose.position)
+            dist = self.distance_light(lp, w.pose.pose.position)
             if min_dist is None or dist < min_dist:
                 min_dist = dist
                 closest_waypoint_id = i
