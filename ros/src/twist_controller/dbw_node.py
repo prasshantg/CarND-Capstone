@@ -52,22 +52,24 @@ class DBWNode(object):
                                             ThrottleCmd, queue_size=1)
         self.brake_pub = rospy.Publisher('/vehicle/brake_cmd',
                                          BrakeCmd, queue_size=1)
-
+        
         self.current_linear_velocity = 0
         self.proposed_linear_velocity = 0
         self.proposed_angular_velocity = 0
-        self.dbw_enabled = True
+        #self.dbw_enabled = True
+        self.dbw_enabled = False
         self.twist_cmd_updated = False
 
-
         # TODO: Create `TwistController` object
-        self.controller = Controller()
 
+        self.controller = Controller(vehicle_mass = vehicle_mass, fuel_capacity = fuel_capacity, brake_deadband = brake_deadband,
+                                     decel_limit = decel_limit, accel_limit = accel_limit, wheel_radius = wheel_radius,
+                                     wheel_base=wheel_base, steer_ratio=steer_ratio, max_lat_accel=max_lat_accel, 
+                                     max_steer_angle=max_steer_angle)
         # TODO: Subscribe to all the topics you need to
         rospy.Subscriber('/current_velocity', TwistStamped, self.current_velocity_cb)
         rospy.Subscriber('/twist_cmd', TwistStamped, self.twist_cmd_cb)
         rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.dbw_enabled_cb)
-
         self.loop()
 
     def current_velocity_cb(self, msg):
@@ -79,11 +81,12 @@ class DBWNode(object):
         self.twist_cmd_updated = True
 
     def dbw_enabled_cb(self, msg):
+        rospy.loginfo("DBW status changed to: %s", msg)
         self.dbw_enabled = msg.data
 
     def loop(self):
         rate = rospy.Rate(50) # 50Hz
-        rospy.logdebug("dbw node loop start")
+        #rate = rospy.Rate(10) #10Hz
         while not rospy.is_shutdown():
             # TODO: Get predicted throttle, brake, and steering using `twist_controller`
             # You should only publish the control commands if dbw is enabled
@@ -96,6 +99,8 @@ class DBWNode(object):
             rate.sleep()
 
     def publish(self, throttle, brake, steer):
+        rospy.loginfo("publishing throttle %f, brake %f, steer %f", throttle, brake, steer)
+        
         tcmd = ThrottleCmd()
         tcmd.enable = True
         tcmd.pedal_cmd_type = ThrottleCmd.CMD_PERCENT
