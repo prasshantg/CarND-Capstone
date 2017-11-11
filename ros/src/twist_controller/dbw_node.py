@@ -77,7 +77,7 @@ class DBWNode(object):
 
     def twist_cmd_cb(self, msg):
         self.proposed_linear_velocity = msg.twist.linear.x
-        self.proposed_angular_velocity = msg.twist.angular.x
+        self.proposed_angular_velocity = msg.twist.angular.z
         self.twist_cmd_updated = True
 
     def dbw_enabled_cb(self, msg):
