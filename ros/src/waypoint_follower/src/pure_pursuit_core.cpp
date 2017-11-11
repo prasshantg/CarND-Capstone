@@ -63,7 +63,7 @@ double PurePursuit::getCmdVelocity(int waypoint) const
   }
 
   double velocity = current_waypoints_.getWaypointVelocityMPS(waypoint);
-  // ROS_INFO_STREAM("waypoint : " << mps2kmph(velocity) << " km/h ( " << velocity << "m/s )");
+  //ROS_ERROR_STREAM("waypoint : " << mps2kmph(velocity) << " km/h ( " << velocity << "m/s )");
   return velocity;
 }
 
@@ -372,6 +372,7 @@ geometry_msgs::TwistStamped PurePursuit::go()
   }
   //ROS_ERROR_STREAM("next waypoint = " <<  num_of_next_waypoint_);
 
+  //ROS_ERROR("lookd %lf next wp %d\n", lookahead_distance_, num_of_next_waypoint_);
   // if g_linear_interpolate_mode is false or next waypoint is first or last
   if (!linear_interpolate_ || num_of_next_waypoint_ == 0 ||
       num_of_next_waypoint_ == (static_cast<int>(current_waypoints_.getSize() - 1)))

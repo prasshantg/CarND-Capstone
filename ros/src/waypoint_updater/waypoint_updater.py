@@ -65,13 +65,18 @@ class WaypointUpdater(object):
                 current_wp = self.last_waypoint
                 min_dist = 10000
                 dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
-                for i in range(current_wp, len(self.base_waypoints)):
-                    dist = dl(self.current_pose.position, self.base_waypoints[i].pose.pose.position)
+                wp = current_wp
+                for i in range(len(self.base_waypoints)):
+                    dist = dl(self.current_pose.position, self.base_waypoints[wp].pose.pose.position)
                     if (dist < min_dist):
-                        current_wp = i
+                        current_wp = wp
                         min_dist = dist
-                    if current_wp != i:
+                    if current_wp != wp:
                         break
+                    if wp == (len(self.base_waypoints) - 1):
+                        wp = 0
+                    else:
+                        wp = wp + 1
 
                 self.last_waypoint = current_wp
                 final_waypoints_ = Lane()
@@ -80,7 +85,10 @@ class WaypointUpdater(object):
 
                 rospy.logdebug("cur pos wp {}".format(current_wp))
                 for i in range(LOOKAHEAD_WPS):
-                    final_waypoints_.waypoints.append(self.base_waypoints[i + current_wp])
+                    index = i + current_wp
+                    if index >= len(self.base_waypoints):
+                        index = index - len(self.base_waypoints)
+                    final_waypoints_.waypoints.append(self.base_waypoints[index])
 
                 self.final_waypoints_pub.publish(final_waypoints_)
                 rate.sleep()
@@ -90,6 +98,7 @@ class WaypointUpdater(object):
         now = rospy.get_rostime()
         self.base_waypoints = waypoints.waypoints
         self.base_waypoints_received = True
+        rospy.logdebug("num of wps {}".format(len(self.base_waypoints)))
 
     def traffic_cb(self, msg):
         # TODO: Callback for /traffic_waypoint message. Implement
