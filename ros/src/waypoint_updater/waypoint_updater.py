@@ -30,8 +30,10 @@ class WaypointUpdater(object):
     base_waypoints = []
     last_waypoint = 0
     base_waypoints_received = False
+    current_position_received = False
     final_wp_seq = 0
     traffic_light_state = TrafficLight.UNKNOWN
+    current_pos = PoseStamped()
 
     def __init__(self):
         rospy.init_node('waypoint_updater', log_level=rospy.DEBUG)
@@ -47,31 +49,41 @@ class WaypointUpdater(object):
 
         # TODO: Add other member variables you need below
 
-        rospy.spin()
+        self.loop()
 
     def pose_cb(self, msg):
         # TODO: Implement
-        if (self.base_waypoints_received == False):
-            return
+        self.current_position_received = True
+        self.current_pose = msg.pose
 
-        current_wp = 0
-        dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
-        for i in range(len(self.base_waypoints)):
-            dist = dl(msg.pose.position, self.base_waypoints[i].pose.pose.position)
-            if (i == 0):
-                min_dist = dist
-            else:
-                if (dist < min_dist):
-                    current_wp = i
+    def loop(self):
+        rate = rospy.Rate(10)
 
-        final_waypoints_ = Lane()
-        final_waypoints_.header.seq = self.final_wp_seq
-        self.final_wp_seq = self.final_wp_seq + 1
+        rospy.logdebug("### loop start")
+        while not rospy.is_shutdown():
+            if (self.base_waypoints_received == True and self.current_position_received == True):
+                current_wp = self.last_waypoint
+                min_dist = 10000
+                dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
+                for i in range(current_wp, len(self.base_waypoints)):
+                    dist = dl(self.current_pose.position, self.base_waypoints[i].pose.pose.position)
+                    if (dist < min_dist):
+                        current_wp = i
+                        min_dist = dist
+                    if current_wp != i:
+                        break
 
-        for i in range(LOOKAHEAD_WPS):
-            final_waypoints_.waypoints.append(self.base_waypoints[i + current_wp])
+                self.last_waypoint = current_wp
+                final_waypoints_ = Lane()
+                final_waypoints_.header.seq = self.final_wp_seq
+                self.final_wp_seq = self.final_wp_seq + 1
 
-        self.final_waypoints_pub.publish(final_waypoints_)
+                rospy.logdebug("cur pos wp {}".format(current_wp))
+                for i in range(LOOKAHEAD_WPS):
+                    final_waypoints_.waypoints.append(self.base_waypoints[i + current_wp])
+
+                self.final_waypoints_pub.publish(final_waypoints_)
+                rate.sleep()
 
     def waypoints_cb(self, waypoints):
         # TODO: Implement
@@ -81,9 +93,7 @@ class WaypointUpdater(object):
 
     def traffic_cb(self, msg):
         # TODO: Callback for /traffic_waypoint message. Implement
-        #rospy.logdebug("Traffic light %i", msg.data)
-        traffic_light_state = msg.data
-        pass
+        self.traffic_light_state = msg.data
 
     def obstacle_cb(self, msg):
         # TODO: Callback for /obstacle_waypoint message. We will implement it later

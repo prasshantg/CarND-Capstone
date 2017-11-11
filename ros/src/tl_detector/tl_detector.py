@@ -232,7 +232,7 @@ class TLDetector(object):
         light = stop_line_positions[light_idx]
 
         light_distance = self.distance_light(light, self.waypoints.waypoints[self.last_car_position].pose.pose.position)
-        rospy.loginfo('light_distance:: {}'.format(light_distance))
+        #rospy.loginfo('light_distance:: {}'.format(light_distance))
 
         if light:
             if (light_distance >= self.FAR_LIGHT_DIST):

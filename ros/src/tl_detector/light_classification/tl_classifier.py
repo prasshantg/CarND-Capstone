@@ -99,8 +99,8 @@ class TLClassifier(object):
         if (self.current_light == TrafficLight.UNKNOWN):
             class_name = 'UNKNOWN'
 
-        rospy.loginfo('TL_CLassifier:: {}'.format(class_name))
-        rospy.loginfo('\n')
+#        rospy.loginfo('TL_CLassifier:: {}'.format(class_name))
+#        rospy.loginfo('\n')
 
         return self.current_light
 

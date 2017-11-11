@@ -85,7 +85,7 @@ class DBWNode(object):
         self.dbw_enabled = msg.data
 
     def loop(self):
-        rate = rospy.Rate(50) # 50Hz
+        rate = rospy.Rate(10) # 50Hz
         #rate = rospy.Rate(10) #10Hz
         while not rospy.is_shutdown():
             # TODO: Get predicted throttle, brake, and steering using `twist_controller`
@@ -99,8 +99,6 @@ class DBWNode(object):
             rate.sleep()
 
     def publish(self, throttle, brake, steer):
-        rospy.loginfo("publishing throttle %f, brake %f, steer %f", throttle, brake, steer)
-        
         tcmd = ThrottleCmd()
         tcmd.enable = True
         tcmd.pedal_cmd_type = ThrottleCmd.CMD_PERCENT

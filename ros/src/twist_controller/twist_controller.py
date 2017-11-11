@@ -54,8 +54,8 @@ class Controller(object):
         # calculate delta time for the PID controller
         delta_time = rospy.get_time() - self.last_time
 
-        rospy.loginfo("proposed_linear_velocity %f, current_linear_velocity %f", proposed_linear_velocity, current_linear_velocity)
-        rospy.loginfo("proposed_angular_velocity %f", proposed_angular_velocity)
+#        rospy.loginfo("proposed_linear_velocity %f, current_linear_velocity %f", proposed_linear_velocity, current_linear_velocity)
+#        rospy.loginfo("proposed_angular_velocity %f", proposed_angular_velocity)
         velocity_error = proposed_linear_velocity - current_linear_velocity
 
         steering = self.yaw_controller.get_steering(proposed_linear_velocity, proposed_angular_velocity, current_linear_velocity)
@@ -78,5 +78,7 @@ class Controller(object):
             # translate percentage of braking to braking force desired
             brake_cmd = brake_cmd * (self.vehicle_mass + self.fuel_capacity * GAS_DENSITY) * self.wheel_radius
 
+        #steer_cmd = steer_cmd * 2
+        #rospy.logdebug("ang vel {} steer {}".format(proposed_angular_velocity, steer_cmd))
         #return 1., 0., 0.
         return throttle_cmd, brake_cmd, steer_cmd

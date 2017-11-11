@@ -1,4 +1,6 @@
 
+import rospy
+
 class LowPassFilter(object):
     def __init__(self, tau, ts):
         self.a = 1. / (tau / ts + 1.)
@@ -6,6 +8,7 @@ class LowPassFilter(object):
 
         self.last_val = 0.
         self.ready = False
+        rospy.logdebug("a {} b {}".format(self.a, self.b))
 
     def get(self):
         return self.last_val

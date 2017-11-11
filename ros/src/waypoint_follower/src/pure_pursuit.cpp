@@ -51,7 +51,7 @@ int main(int argc, char **argv)
 
   ROS_INFO("set publisher...");
   // publish topic
-  ros::Publisher cmd_velocity_publisher = nh.advertise<geometry_msgs::TwistStamped>("twist_cmd", 10);
+  ros::Publisher cmd_velocity_publisher = nh.advertise<geometry_msgs::TwistStamped>("twist_cmd", 30);
 
   ROS_INFO("set subscriber...");
   // subscribe topic
