@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
 import rospy
+from std_msgs.msg import Int32
 from geometry_msgs.msg import PoseStamped
-from styx_msgs.msg import Lane, Waypoint
+from styx_msgs.msg import Lane, Waypoint, TrafficLight
 
 import math
 
@@ -30,6 +31,7 @@ class WaypointUpdater(object):
     last_waypoint = 0
     base_waypoints_received = False
     final_wp_seq = 0
+    traffic_light_state = TrafficLight.UNKNOWN
 
     def __init__(self):
         rospy.init_node('waypoint_updater', log_level=rospy.DEBUG)
@@ -39,7 +41,7 @@ class WaypointUpdater(object):
 
         # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
 	# TODO: yet to implement trafic sign classifier
-
+        rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
@@ -74,13 +76,13 @@ class WaypointUpdater(object):
     def waypoints_cb(self, waypoints):
         # TODO: Implement
         now = rospy.get_rostime()
-        rospy.logdebug("current time %i %i", now.secs, now.nsecs)
-        rospy.logdebug("waypoints_cb seq={}, stamp={}, frame_id={}, num of waypoints={}".format(waypoints.header.seq, waypoints.header.stamp, waypoints.header.frame_id, len(waypoints.waypoints)))
         self.base_waypoints = waypoints.waypoints
         self.base_waypoints_received = True
 
     def traffic_cb(self, msg):
         # TODO: Callback for /traffic_waypoint message. Implement
+        #rospy.logdebug("Traffic light %i", msg.data)
+        traffic_light_state = msg.data
         pass
 
     def obstacle_cb(self, msg):
