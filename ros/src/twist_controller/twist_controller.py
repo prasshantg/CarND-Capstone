@@ -80,3 +80,6 @@ class Controller(object):
 
         #return 1., 0., 0.
         return throttle_cmd, brake_cmd, steer_cmd
+
+   def reset(self):
+	self.accel_pid.reset()

@@ -58,6 +58,7 @@ class DBWNode(object):
         self.proposed_angular_velocity = 0
         #self.dbw_enabled = True
         self.dbw_enabled = False
+	self.dbw_enabled_last = self.dbw_enabled
         self.twist_cmd_updated = False
 
         # TODO: Create `TwistController` object
@@ -67,9 +68,9 @@ class DBWNode(object):
                                      wheel_base=wheel_base, steer_ratio=steer_ratio, max_lat_accel=max_lat_accel, 
                                      max_steer_angle=max_steer_angle)
         # TODO: Subscribe to all the topics you need to
-        rospy.Subscriber('/current_velocity', TwistStamped, self.current_velocity_cb)
-        rospy.Subscriber('/twist_cmd', TwistStamped, self.twist_cmd_cb)
-        rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.dbw_enabled_cb)
+        rospy.Subscriber('/current_velocity', TwistStamped, self.current_velocity_cb, queue_size = 5)
+        rospy.Subscriber('/twist_cmd', TwistStamped, self.twist_cmd_cb, queue_size = 5)
+        rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.dbw_enabled_cb, queue_size=1)
         self.loop()
 
     def current_velocity_cb(self, msg):
@@ -78,11 +79,20 @@ class DBWNode(object):
     def twist_cmd_cb(self, msg):
         self.proposed_linear_velocity = msg.twist.linear.x
         self.proposed_angular_velocity = msg.twist.angular.x
+	// Uncomment this line and comment above line, if required
+	// It is based on the how the angular velocity is populated in waypoint_updater
+	#self.proposed_angular_velocity = msg.twist.angular.z
         self.twist_cmd_updated = True
 
     def dbw_enabled_cb(self, msg):
         rospy.loginfo("DBW status changed to: %s", msg)
+	self.dbw_enabled_last = self.dbw_enabled 
         self.dbw_enabled = msg.data
+	// Reset the PID parameters only when the step is detected for dbw_enabled	
+	if self.dbw_enabled_last == False and self.dbw_enabled == True:
+	    self.dbw_enabled_last = True
+ 	    self.controller.reset()
+	      	
 
     def loop(self):
         rate = rospy.Rate(50) # 50Hz
