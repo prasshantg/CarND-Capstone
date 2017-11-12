@@ -383,6 +383,7 @@ geometry_msgs::TwistStamped PurePursuit::go()
 
   //ROS_ERROR("lookd %lf next wp %d\n", lookahead_distance_, num_of_next_waypoint_);
   // if g_linear_interpolate_mode is false or next waypoint is first or last
+  //ROS_ERROR_STREAM("interpolate " << linear_interpolate_ << " nwp " << num_of_next_waypoint_ << " cwpsize " << current_waypoints_.getSize());
   if (!linear_interpolate_ || num_of_next_waypoint_ == 0 ||
       num_of_next_waypoint_ == (static_cast<int>(current_waypoints_.getSize() - 1)))
   {

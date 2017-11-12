@@ -29,7 +29,7 @@ class Controller(object):
                                             max_lat_accel = max_lat_accel, max_steer_angle = max_steer_angle)
 
         # setup the PID controller parameters for the accelerator/brake
-        self.accel_pid = PID(kp=1., ki=0., kd=0., mn=decel_limit, mx=accel_limit)
+        self.accel_pid = PID(kp=2., ki=0., kd=0.02, mn=decel_limit, mx=accel_limit)
         
         # setup the low pass filter for steering
         self.steer_lpf = LowPassFilter(tau = 3., ts = 1.)
@@ -78,7 +78,4 @@ class Controller(object):
             # translate percentage of braking to braking force desired
             brake_cmd = brake_cmd * (self.vehicle_mass + self.fuel_capacity * GAS_DENSITY) * self.wheel_radius
 
-        #steer_cmd = steer_cmd * 2
-        #rospy.logdebug("ang vel {} steer {}".format(proposed_angular_velocity, steer_cmd))
-        #return 1., 0., 0.
         return throttle_cmd, brake_cmd, steer_cmd
