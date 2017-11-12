@@ -22,7 +22,7 @@ as well as to verify your TL classifier.
 TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
-LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
+LOOKAHEAD_WPS = 50 # Number of waypoints we will publish. You can change this number
 
 
 class WaypointUpdater(object):
@@ -45,7 +45,7 @@ class WaypointUpdater(object):
 	# TODO: yet to implement trafic sign classifier
         rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
 
-        self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
+        self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=3)
 
         # TODO: Add other member variables you need below
 
@@ -57,7 +57,7 @@ class WaypointUpdater(object):
         self.current_pose = msg.pose
 
     def loop(self):
-        rate = rospy.Rate(10)
+        rate = rospy.Rate(30)
 
         rospy.logdebug("### loop start")
         while not rospy.is_shutdown():
@@ -68,6 +68,8 @@ class WaypointUpdater(object):
                 wp = current_wp
                 for i in range(len(self.base_waypoints)):
                     dist = dl(self.current_pose.position, self.base_waypoints[wp].pose.pose.position)
+                    #if self.last_waypoint > 10000:
+                    #    rospy.logdebug("wp {} dist {} mindist {} cwp {}".format(wp, dist, min_dist, current_wp))
                     if (dist < min_dist):
                         current_wp = wp
                         min_dist = dist
@@ -84,11 +86,16 @@ class WaypointUpdater(object):
                 self.final_wp_seq = self.final_wp_seq + 1
 
                 rospy.logdebug("cur pos wp {}".format(current_wp))
-                for i in range(LOOKAHEAD_WPS):
-                    index = i + current_wp
-                    if index >= len(self.base_waypoints):
-                        index = index - len(self.base_waypoints)
-                    final_waypoints_.waypoints.append(self.base_waypoints[index])
+                #for i in range(LOOKAHEAD_WPS):
+                #    index = i + current_wp
+                #    if index >= len(self.base_waypoints):
+                #        index = index - len(self.base_waypoints)
+                #    final_waypoints_.waypoints.append(self.base_waypoints[index])
+                if (current_wp + LOOKAHEAD_WPS) < len(self.base_waypoints):
+                    final_waypoints_.waypoints.extend(self.base_waypoints[current_wp:current_wp+LOOKAHEAD_WPS])
+                else:
+                    final_waypoints_.waypoints.extend(self.base_waypoints[current_wp:(len(self.base_waypoints)-1)])
+                    final_waypoints_.waypoints.extend(self.base_waypoints[0:LOOKAHEAD_WPS-(len(self.base_waypoints)-current_wp)])
 
                 self.final_waypoints_pub.publish(final_waypoints_)
                 rate.sleep()
