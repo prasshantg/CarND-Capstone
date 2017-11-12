@@ -102,7 +102,7 @@ class WaypointUpdater(object):
 
             #rospy.logdebug("deaccel {}".format(deaccel))
             #if deaccel != 0 and deaccel > -10.0 and deaccel < -5.0:
-            if deaccel != 0 and (deaccel > -2.0 or self.traffic_wp_start == -1):
+            if deaccel != 0 and (deaccel > -5.0 or self.traffic_wp_start == -1):
                 #rospy.logdebug("clv {} deaccel {}".format(self.current_linear_velocity, deaccel))
                 if self.traffic_wp_start == -1:
                     self.traffic_wp_start = current_wp
