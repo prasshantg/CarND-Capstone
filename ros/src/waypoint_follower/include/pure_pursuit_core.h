@@ -76,6 +76,7 @@ private:
   geometry_msgs::PoseStamped current_pose_;
   geometry_msgs::TwistStamped current_velocity_;
   WayPoints current_waypoints_;
+  unsigned int waypoint_seq_;
 
   double getCmdVelocity(int waypoint) const;
   void calcLookaheadDistance(int waypoint);
