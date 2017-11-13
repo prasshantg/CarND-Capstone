@@ -58,7 +58,7 @@ double PurePursuit::getCmdVelocity(int waypoint) const
 {
   if (current_waypoints_.isEmpty())
   {
-    ROS_INFO_STREAM("waypoint : not loaded path");
+    ROS_ERROR_STREAM("waypoint : not loaded path");
     return 0;
   }
 
@@ -273,7 +273,6 @@ geometry_msgs::Twist PurePursuit::calcTwist(double curvature, double cmd_velocit
 
 void PurePursuit::getNextWaypoint()
 {
-  int current_wp;
   int path_size = static_cast<int>(current_waypoints_.getSize());
 
   // if waypoints are not given, do nothing.
@@ -283,16 +282,13 @@ void PurePursuit::getNextWaypoint()
     return;
   }
 
-  current_wp = getClosestWaypoint(current_waypoints_.getCurrentWaypoints(), current_pose_.pose);
-  //ROS_ERROR("closes wp in path %d\n", current_wp);
-
   // look for the next waypoint.
-  for (int i = current_wp; i < path_size; i++)
+  for (int i = 0; i < path_size; i++)
   {
     // if search waypoint is the last
     if (i == (path_size - 1))
     {
-      ROS_INFO("search waypoint is the last");
+      //ROS_ERROR("search waypoint is the last");
       num_of_next_waypoint_ = i;
       return;
     }
@@ -301,7 +297,6 @@ void PurePursuit::getNextWaypoint()
     if (getPlaneDistance(current_waypoints_.getWaypointPosition(i), current_pose_.pose.position) > lookahead_distance_)
     {
       num_of_next_waypoint_ = i;
-      //ROS_ERROR_STREAM("wp = " << i << " dist = " << getPlaneDistance(current_waypoints_.getWaypointPosition(i), current_pose_.pose.position) );
       return;
     }
   }
@@ -371,7 +366,7 @@ geometry_msgs::TwistStamped PurePursuit::go()
   getNextWaypoint();
   if (num_of_next_waypoint_ == -1)
   {
-    ROS_WARN("lost next waypoint");
+    //ROS_ERROR("lost next waypoint");
     return outputZero();
   }
   //ROS_ERROR_STREAM("next waypoint = " <<  num_of_next_waypoint_);

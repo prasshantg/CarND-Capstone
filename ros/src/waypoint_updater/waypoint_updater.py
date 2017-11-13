@@ -135,14 +135,12 @@ class WaypointUpdater(object):
         else:
             final_waypoints_.waypoints.extend(self.base_waypoints[current_wp:(len(self.base_waypoints)-1)])
             final_waypoints_.waypoints.extend(self.base_waypoints[0:LOOKAHEAD_WPS-(len(self.base_waypoints)-current_wp)])
-            rospy.logdebug("fnwp length {}".format(len(final_waypoints_.waypoints)))
 
         self.final_waypoints_pub.publish(final_waypoints_)
 
     def loop(self):
         rate = rospy.Rate(30)
 
-        rospy.logdebug("### loop start")
         while not rospy.is_shutdown():
             self.publish_waypoints()
             rate.sleep()
@@ -154,6 +152,9 @@ class WaypointUpdater(object):
         # TODO: Implement
         now = rospy.get_rostime()
         self.base_waypoints = waypoints.waypoints
+        for i in range(len(self.base_waypoints)):
+            self.base_waypoints[i].pose.header.seq = i
+            self.base_waypoints[i].twist.twist.linear.x = 11.1111111111
         self.base_waypoints_received = True
         rospy.logdebug("num of wps {}".format(len(self.base_waypoints)))
 
