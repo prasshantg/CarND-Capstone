@@ -81,47 +81,49 @@ class WaypointUpdater(object):
 
         return current_wp
 
+    def update_velocity(self, current_wp):
+        dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
+
+        if self.traffic_light_wp == -1:
+            return
+
+        deaccel = 0
+        dist = dl(self.current_pose.position, self.base_waypoints[self.traffic_light_wp].pose.pose.position)
+        d_dist = dist - 5
+        if dist == 0:
+            return
+
+        deaccel = (0 - (self.current_linear_velocity * self.current_linear_velocity)) / (2 * d_dist)
+        if deaccel < -5.0 or deaccel == 0:
+            return
+
+        last_wp_vel = (self.current_linear_velocity * self.current_linear_velocity) + (2 * deaccel * dist)
+        if last_wp_vel > 0:
+            return
+
+        if self.traffic_wp_start == -1:
+            self.traffic_wp_start = current_wp
+            self.orig_velocity = self.get_waypoint_velocity(self.base_waypoints[self.traffic_light_wp])
+
+        for i in range(self.traffic_light_wp - current_wp + 1):
+            target_vel = 0
+            dist = dl(self.current_pose.position, self.base_waypoints[current_wp + i].pose.pose.position)
+            temp1 = self.current_linear_velocity * self.current_linear_velocity
+            temp2 = 2 * deaccel * dist
+            temp3 = temp1 + temp2
+            if temp3 > 0:
+                target_vel = math.sqrt(temp3)
+            self.set_waypoint_velocity(self.base_waypoints, current_wp + i, target_vel)
+
+
     def publish_waypoints(self):
         if (self.base_waypoints_received == False or self.current_position_received == False):
             return
 
-        if self.last_waypoint == 10901:
-            rospy.logdebug("one track completed")
-
         current_wp = self.closest_waypoint()
 
         #rospy.logdebug("cwp {}".format(current_wp))
-
-        dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
-
-        if self.traffic_light_wp != -1:
-            deaccel = 0
-            dist = dl(self.current_pose.position, self.base_waypoints[self.traffic_light_wp].pose.pose.position)
-            if dist != 0:
-                deaccel = (0 - (self.current_linear_velocity * self.current_linear_velocity)) / (2 * dist)
-
-            #rospy.logdebug("deaccel {}".format(deaccel))
-            #if deaccel != 0 and deaccel > -10.0 and deaccel < -5.0:
-            if deaccel != 0 and (deaccel > -5.0 or self.traffic_wp_start == -1):
-                #rospy.logdebug("clv {} deaccel {}".format(self.current_linear_velocity, deaccel))
-                if self.traffic_wp_start == -1:
-                    self.traffic_wp_start = current_wp
-                    self.orig_velocity = self.get_waypoint_velocity(self.base_waypoints[self.traffic_light_wp])
-
-                for i in range(self.traffic_light_wp - current_wp + 1):
-                    target_vel = 0
-                    dist = dl(self.current_pose.position, self.base_waypoints[current_wp + i].pose.pose.position)
-                    #rospy.logdebug("wp {} dist {}".format(current_wp + i, dist))
-                    temp1 = self.current_linear_velocity * self.current_linear_velocity
-                    temp2 = 2 * deaccel * dist
-                    temp3 = temp1 + temp2
-                    if temp3 > 0:
-                        target_vel = math.sqrt(temp3)
-                    #target_vel = target_vel - self.current_linear_velocity
-                    #rospy.logdebug("target vel {} for wp {} dist {}".format(target_vel, current_wp + i, dist))
-                    self.set_waypoint_velocity(self.base_waypoints, current_wp + i, target_vel)
-                    self.set_waypoint_velocity(self.base_waypoints, self.traffic_light_wp - 1, 0)
-                    self.set_waypoint_velocity(self.base_waypoints, self.traffic_light_wp, 0)
+        self.update_velocity(current_wp)
 
         self.last_waypoint = current_wp
         final_waypoints_ = Lane()
@@ -133,6 +135,7 @@ class WaypointUpdater(object):
         else:
             final_waypoints_.waypoints.extend(self.base_waypoints[current_wp:(len(self.base_waypoints)-1)])
             final_waypoints_.waypoints.extend(self.base_waypoints[0:LOOKAHEAD_WPS-(len(self.base_waypoints)-current_wp)])
+            rospy.logdebug("fnwp length {}".format(len(final_waypoints_.waypoints)))
 
         self.final_waypoints_pub.publish(final_waypoints_)
 
@@ -141,9 +144,7 @@ class WaypointUpdater(object):
 
         rospy.logdebug("### loop start")
         while not rospy.is_shutdown():
-            current_wp = self.closest_waypoint()
-            if current_wp > self.last_waypoint:
-                self.publish_waypoints()
+            self.publish_waypoints()
             rate.sleep()
 
     def current_velocity_cb(self, msg):

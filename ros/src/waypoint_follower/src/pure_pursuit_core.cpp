@@ -49,12 +49,7 @@ void PurePursuit::callbackFromCurrentVelocity(const geometry_msgs::TwistStampedC
 
 void PurePursuit::callbackFromWayPoints(const styx_msgs::LaneConstPtr &msg)
 {
-  styx_msgs::Lane temp;
-  temp = *msg;
-  if ((waypoint_set_ == true) && ((waypoint_seq_ + 1) != (temp.header.seq)))
-    ROS_ERROR("### pakctes dropped\n");
   current_waypoints_.setPath(*msg);
-  waypoint_seq_ = temp.header.seq;
   waypoint_set_ = true;
   // ROS_INFO_STREAM("waypoint subscribed");
 }
@@ -396,7 +391,7 @@ geometry_msgs::TwistStamped PurePursuit::go()
 
   if (!interpolate_flag)
   {
-    ROS_ERROR_STREAM("lost target! ");
+    //ROS_ERROR_STREAM("lost target! ");
     return outputZero();
   }
 
