@@ -15,6 +15,8 @@ import math
 STATE_COUNT_THRESHOLD = 1
 
 class TLDetector(object):
+    tl_detector_init = False
+
     def __init__(self):
         rospy.init_node('tl_detector')
 
@@ -34,7 +36,7 @@ class TLDetector(object):
         rely on the position of the light and the camera image to predict it.
         '''
         sub3 = rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb)
-        sub6 = rospy.Subscriber('/image_color', Image, self.image_cb)
+        sub6 = rospy.Subscriber('/image_color', Image, self.image_cb,queue_size=1, buff_size=2*52428800)
 
         config_string = rospy.get_param("/traffic_light_config")
         self.config = yaml.load(config_string)
@@ -59,6 +61,7 @@ class TLDetector(object):
         self.last_car_position = 0
         self.last_light_pos_wp = []
         self.FAR_LIGHT_DIST = 100.0
+        self.tl_detector_init = True
 
         rospy.spin()
 
@@ -79,6 +82,9 @@ class TLDetector(object):
             msg (Image): image from car-mounted camera
 
         """
+        if self.tl_detector_init == False:
+            return
+
         self.has_image = True
         self.camera_image = msg
         light_wp, state = self.process_traffic_lights()
