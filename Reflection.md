@@ -3,6 +3,8 @@
 
 The System Integration project is the final project of the Udacity Self-Driving Car Engineer Nanodegree. As a team, we built ROS nodes to implement core functionality of the autonomous vehicle system, including traffic light detection, control, and waypoint following. This software system will be deployed on Carla (Udacity’s Self Driving Lincoln MKZ) to autonomously drive it around a test track.
 
+Link to github repo: https://github.com/prasshantg/CarND-Capstone
+
 ## Team - Rock On
 | Name | Location | Project contribution |
 | --- | --- | --- | 
@@ -19,15 +21,15 @@ Below are major module and their interfaces.
 
 ![Architecture](Reflection-images/architecture.png)
 
-There are 3 major block  
+This project required implementation of 3 major blocks
 1. Perception Subsystem  
 2. Planning Subsystem  
 3. Control Subsystem  
 
-Detail explanation is below:
+Detailed explanation is below:
 
 ### 1. Perception Subsystem:
-This subsystem reads the world surrounding the vehicle and publishes relevant information to other subsystems. Specifically, this subsystem determines the state of upcoming traffic lights and publishes their status to other subsystems.
+This subsystem reads the world surrounding the vehicle and publishes relevant information to other subsystems. Surrounding includes traffic lights, objects, vehicles etc. For this project we required understanding only traffic lights detection and classification.
 
 
 #### 1.1 Traffic Light Detection Node:
@@ -42,7 +44,7 @@ The traffic light detection node (tl_detector.py) subscribes to three topics:
 * /current_pose can be used to determine the vehicle's location.  
 * /image_color which provides an image stream from the car's camera. These images are used to determine the color of upcoming traffic lights.  
 
-The node publishes the index of the waypoint for nearest upcoming red light's stop line to a single topic. This index will be later be used by the waypoint updater node to set the target velocity. 
+The node publishes the index of the waypoint for nearest upcoming red light's stop line to a single topic. This index will be later used by the waypoint updater node to set the target velocity. 
 
 * /traffic_waypoint
 
@@ -57,21 +59,21 @@ Modification done in tl_detector.py :
     * process_traffic_lights(self)
     
 #### 1.3 Traffic Light Classification:
-Traffic light detection takes a captured image as input and produces the bounding boxes as the output to be fed into the classification model. After many trial-and-errors, we decided to use TensorFlow Object Detection API, which is an open source framework built on top of TensorFlow to construct, train and deploy object detection models. The Object Detection API also comes with a collection of detection models pre-trained on the COCO dataset that are well suited for fast prototyping. We have used transfer learning becaus of limited data sets availability. We have experimented below pre-trained models with different data sets.
+Traffic light detection takes a captured image as input and produces the bounding boxes as the output to be fed into the classification model. After many trial-and-errors, we decided to use TensorFlow Object Detection API, which is an open source framework built on top of TensorFlow to construct, train and deploy object detection models. The Object Detection API also comes with a collection of detection models pre-trained on the COCO dataset that are well suited for fast prototyping. We used transfer learning because of limited data sets availability. We experimented below pre-trained models with different data sets.
 * faster_rcnn_resnet101_coco
 * ssd_mobilenet_v1_coco
 
 #### 1.4 Dataset used:
-We have used the datasets which was shared in the forum for udacity simulator data approx 260 images and udacity real track data which is arrpund 160 images.
+We used the datasets which were shared in the forum for Udacity simulator data included approximate 260 images and udacity real track data which included arround 160 images.
 
 #### 1.4 Different steps taken for transfer learning:
-Below are the different steps performed  to train pre-trained network using new datasets.
+Below are the different steps performed to train pre-trained network using new datasets.
 
-* Gathering the data, used udacity real and sim data shared on forum.
+* Gather the data, used udacity real and sim data shared on forum.
 * Lable and annotate the datasets. 
-* Creating Tfrecord file which would be used for training.
-* Training the model and savining the model.
-* Generating and saving graph for referencing.
+* Create Tfrecord file which would be used for training.
+* Train and save model.
+* Generate and save graph for referencing.
 
 The traffic-light detection is implemented in get_classification(self, image) function in CarND-Capstone/tree/master/ros/src/tl_detector/light_classification/tl_classifier.py.
 
@@ -95,7 +97,31 @@ The planning subsystem plans the vehicle’s path based on the vehicle’s curre
 This node was implemented by Udacity. It loads a CSV file that contains all the waypoints along the track and publishes them to the topic /base_waypoints. The CSV can easily be swapped out based on the test location (simulator vs real world).
 
 #### 2.2 Waypoint Updater Node:
-The bulk of the path planning happens within this node. This node subscribes to three topics to get the entire list of waypoints, the vehicle’s current position, and the state of upcoming traffic lights. Once we receive the list of waypoints, we store this result and ignore any future messages as the list of waypoints won’t change. This node publishes a list of waypoints to follow - each waypoint contains a position on the map and a target velocity.
+The bulk of the path planning happens within this node. This node subscribes to three topics to get the entire list of waypoints, the vehicle’s current position, and the waypoint for upcoming red traffic lights. Once we receive the list of waypoints, we store this result. This node publishes a list of waypoints to follow - each waypoint contains position on the map and a target velocity.
+
+Waypoint updater publishes path to follow on 3 instances
+* When current position message is received
+* When traffic waypoint message is received
+* And in loop with frequency of 30Hz
+
+This is to make sure that it is updating velocity and publishing path when important events are received and also at regular interval.
+
+It is also responsible to update velocity of waypoints in published path. It checks for waypoint of upcoming red traffic light and depending on it updates velocity everytime it is publishing the path.
+
+Approach for deciding velocity
+* Calculate distance to red traffic light waypoint from current position
+* Calculate deacceleration required to reduce velocity to 0 from current linear velocity in that distance. We subtract 5m from actual calculated distance to add safety margin for any delays.
+* Update velocity of all waypoints in current path going to be published
+
+When to accelerate if traffic light is green?
+* This was challenging as the duration of green light is very short which caused traffic light violation many times
+* We decided to accelerate only when car is at stop line and traffic light is green. So car will not accelerate even if it notices green light but it is not at stop line.
+
+New functions in waypoint_update.py:
+* closest_waypoint
+   * Get closest waypoint from current position
+* update_velocity
+   * Update velocity depending on position of upcoming red traffic light
 
 ### 3. Control Subsystem:
 This subsystem publishes control commands for the vehicle’s steering, throttle, and brakes based on a list of waypoints to follow.
@@ -127,5 +153,5 @@ Most of the testing was done using the Udacity simulator. But we also tested our
 
 
 ## Known Issues :
-* Sometimes simulator is not able to connect with ros nodes. Car fails to move on track. As a work around, need to restart the simulator and launch the ros.
-* Car is always stopping at traffic light signal irrespective of traffic signal light. And once signal is green, it moves.
+* Sometimes simulator is not able to connect with ros nodes on launch. Car fails to move on track. As a work around, need to restart the simulator and launch the ros.
+* Car is always stopping at traffic light signal irrespective of traffic signal light. And once signal is green, it moves. This can be improved to accelerate car when car is within safe distance from stop line instead of being exactly at stop line.
