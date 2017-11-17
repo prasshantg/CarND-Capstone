@@ -152,9 +152,15 @@ class WaypointUpdater(object):
         # TODO: Implement
         now = rospy.get_rostime()
         self.base_waypoints = waypoints.waypoints
+        max_vel = 0
         for i in range(len(self.base_waypoints)):
             self.base_waypoints[i].pose.header.seq = i
-            self.base_waypoints[i].twist.twist.linear.x = 11.1111111111
+            if self.base_waypoints[i].twist.twist.linear.x > max_vel:
+                max_vel = self.base_waypoints[i].twist.twist.linear.x
+
+        for i in range(len(self.base_waypoints)):
+            self.base_waypoints[i].twist.twist.linear.x = max_vel
+
         self.base_waypoints_received = True
         rospy.logdebug("num of wps {}".format(len(self.base_waypoints)))
 
