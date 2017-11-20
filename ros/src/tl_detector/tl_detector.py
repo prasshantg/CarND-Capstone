@@ -244,7 +244,6 @@ class TLDetector(object):
         light = stop_line_positions[light_idx]
 
         light_distance = self.distance_light(light, self.waypoints.waypoints[self.last_car_position].pose.pose.position)
-        print("Test Code")
         #rospy.loginfo('light_distance:: {}'.format(light_distance))
 
         if light:
