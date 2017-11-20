@@ -234,12 +234,17 @@ class TLDetector(object):
         else:
             light_delta = light_pos_wp[:]
             light_delta[:] = [x - self.last_car_position for x in light_delta]
-            light_num_wp = min(i for i in light_delta if i > 0) + self.last_car_position
+            try:
+               light_num_wp = min(i for i in light_delta if i > 0) + self.last_car_position
+            except ValueError:
+                rospy.logwarn("Invalid Traffic light waypoint")
+                return -1, TrafficLight.UNKNOWN
 
         light_idx = light_pos_wp.index(light_num_wp)
         light = stop_line_positions[light_idx]
 
         light_distance = self.distance_light(light, self.waypoints.waypoints[self.last_car_position].pose.pose.position)
+        print("Test Code")
         #rospy.loginfo('light_distance:: {}'.format(light_distance))
 
         if light:
